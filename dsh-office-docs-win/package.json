@@ -1,0 +1,58 @@
+{
+  "name": "dsh-office-docs-win",
+  "version": "1.0.1",
+  "description": "Create, edit and QA Office files (.pptx/.docx/.xlsx/.pdf) on locked-down Windows hosts: no Python, no pip, no admin rights. Ships a verified JavaScript OOXML toolkit plus Office COM rendering, and registers four model tools (check, dump, render) and the office-docs-win skill.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "assets",
+    "cordis.patch.yml",
+    "install.mjs",
+    "install.cmd",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "locale/*.json",
+    "LICENSE"
+  ],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "office",
+    "pptx",
+    "docx",
+    "xlsx",
+    "ooxml",
+    "no-python",
+    "windows"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "author": "Rio Zhao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxworld306/DSH-Plugins.git",
+    "directory": "dsh-office-docs-win"
+  },
+  "homepage": "https://github.com/foxworld306/DSH-Plugins/tree/main/dsh-office-docs-win",
+  "bugs": {
+    "url": "https://github.com/foxworld306/DSH-Plugins/issues"
+  },
+  "icon": "./assets/office-docs-win/assets/suez-logo.png"
+}

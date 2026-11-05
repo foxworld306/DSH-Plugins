@@ -1,0 +1,58 @@
+{
+  "name": "dsh-plugin-outlook-owa",
+  "version": "0.5.2",
+  "description": "Drive Outlook Web (OWA) from DeepSeek Harness: read, search, draft, send mail and manage calendar, without Microsoft Graph. Auto-detects the default Chromium browser; zero-config one-click install.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "locale/*.json",
+    "icon.svg",
+    "cordis.patch.yml",
+    "install.mjs",
+    "install.cmd",
+    "test-smoke.mjs",
+    "test-browser.mjs",
+    "README.md",
+    "SKILL.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "outlook",
+    "owa",
+    "email",
+    "calendar",
+    "ews"
+  ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.0 <0.3.0"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "author": "Rio Zhao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxworld306/DSH-Plugins.git",
+    "directory": "dsh-plugin-outlook-owa"
+  },
+  "homepage": "https://github.com/foxworld306/DSH-Plugins/tree/main/dsh-plugin-outlook-owa",
+  "bugs": {
+    "url": "https://github.com/foxworld306/DSH-Plugins/issues"
+  },
+  "license": "MIT"
+}

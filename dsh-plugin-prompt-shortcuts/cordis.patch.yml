@@ -1,0 +1,4 @@
+- insert:
+    - id: prompt-shortcuts
+      name: 'dsh-plugin-prompt-shortcuts'
+      config: {}

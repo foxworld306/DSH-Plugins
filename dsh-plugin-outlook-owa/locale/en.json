@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Outlook OWA",
+    "description": "Read, search, draft and send mail and manage the calendar through your logged-in Outlook Web tab. Works without Microsoft Graph; the token never leaves the browser tab."
+  }
+}

@@ -1,0 +1,7 @@
+# Bundle layer for dsh-office-docs-win.
+# Installed as a profile bundle, this entry mounts the plugin (skill provider + tools).
+# Keeping it here means `dsh plugin add` is the whole installation: the user's own
+# cordis.patch.yml never has to be edited.
+- insert:
+    - id: office-docs-win
+      name: dsh-office-docs-win

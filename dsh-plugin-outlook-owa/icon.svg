@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- dsh-plugin-outlook-owa: calendar card with an envelope glyph inside -->
+  <g fill="none" stroke="#8b9cf7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="14" width="48" height="40" rx="8"/>
+    <line x1="8" y1="27" x2="56" y2="27"/>
+    <line x1="21" y1="8" x2="21" y2="18"/>
+    <line x1="43" y1="8" x2="43" y2="18"/>
+    <polyline points="20,36 32,45 44,36"/>
+  </g>
+</svg>

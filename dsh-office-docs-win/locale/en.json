@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Office Documents (Win)",
+    "description": "Create, edit and QA Office files (.pptx/.docx/.xlsx/.pdf) on locked-down Windows without Python, pip or admin rights: a JS OOXML toolkit plus Office COM rendering, with check/dump/render tools and the office-docs-win skill."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Office 办公文档 (Win)",
+    "description": "免 Python/免管理员的 Windows Office 文件（.pptx/.docx/.xlsx/.pdf）创建、编辑与质检：JS OOXML 工具包 + Office COM 渲染，提供 check/dump/render 工具与 office-docs-win 技能（渲染需桌面版 Office）。"
+  }
+}

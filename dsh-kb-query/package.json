@@ -1,0 +1,73 @@
+{
+  "name": "dsh-kb-query",
+  "version": "0.1.1",
+  "description": "Company knowledge-base (RAG) access for dsh web agents — a composer 知识库 chip (browser half) and the kb_search model tool (host half) over a static KB whitelist, with a pgvector direct backend (default) and the Open WebUI retrieval backend",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./fence": "./lib/fence.js",
+    "./owui": "./lib/owui.js",
+    "./normalize": "./lib/normalize.js",
+    "./state": "./lib/state.js",
+    "./kb-tool": "./lib/kb-tool.js",
+    "./embed": "./lib/embed.js",
+    "./pgvector": "./lib/pgvector.js",
+    "./kb-list": "./lib/kb-list.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">=22",
+    "dsh": ">=0.1.1-rc.2 <0.3.0-0"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "pg": "^8.16.0"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "knowledge-base",
+    "rag",
+    "retrieval",
+    "open-webui"
+  ],
+  "license": "MIT",
+  "author": "Rio Zhao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxworld306/DSH-Plugins.git",
+    "directory": "dsh-kb-query"
+  },
+  "homepage": "https://github.com/foxworld306/DSH-Plugins/tree/main/dsh-kb-query",
+  "bugs": {
+    "url": "https://github.com/foxworld306/DSH-Plugins/issues"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/",
+    "cordis.patch.yml",
+    "README.md",
+    "locale/*.json",
+    "icon.svg",
+    "LICENSE"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "name": "dsh-plugin-prompt-shortcuts",
+  "version": "1.5.1",
+  "description": "DSH plugin (local custom build): prompt shortcuts with a settings page, hero-row placement, {{variable}} prompts, per-phase placement, and auto-switching Chinese/English variants.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Rio Zhao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxworld306/DSH-Plugins.git",
+    "directory": "dsh-plugin-prompt-shortcuts"
+  },
+  "homepage": "https://github.com/foxworld306/DSH-Plugins/tree/main/dsh-plugin-prompt-shortcuts",
+  "bugs": {
+    "url": "https://github.com/foxworld306/DSH-Plugins/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "prompt",
+    "prompt-shortcuts",
+    "composer"
+  ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.1-rc.5 <0.3.0-0"
+  },
+  "icon": "./icon.svg",
+  "meta": {
+    "title": "自定义指令",
+    "description": "把常用提示词存成快捷按钮。管理入口在「设置 → 自定义指令」；新建会话页中按钮位于模式选择右侧；提示词支持 {{变量名}} 占位符，点击时先填写变量。"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md",
+    "LICENSE",
+    "docs/preview-row.png",
+    "docs/m1.png",
+    "docs/m2.png",
+    "locale/*.json"
+  ],
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  }
+}

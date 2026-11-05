@@ -1,0 +1,9 @@
+# Bundle patch layer for dsh-plugin-outlook-owa.
+#
+# Applied automatically when a profile installs this package as a bundle
+# (`dsh plugin add dsh-plugin-outlook-owa`). A profile's own
+# cordis.patch.yml is applied later and can override this row by id
+# (e.g. to supply `config:` — see README.md).
+- insert:
+    - id: outlook-owa
+      name: dsh-plugin-outlook-owa

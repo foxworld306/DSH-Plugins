@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Outlook 邮箱 (OWA)",
+    "description": "通过你已登录的 Outlook 网页版读写邮件、管理日历。无需 Microsoft Graph；令牌只存在于浏览器标签页内。"
+  }
+}

@@ -1,0 +1,57 @@
+# dsh-kb-query bundle patch: mounts the knowledge-base (RAG) plugin into a
+# web profile. Deployment-specific values (openwebuiUrl, the key
+# references, trustedHosts, k/budgets) belong in the profile's own
+# cordis.patch.yml, which overrides this row by id — a patch replaces the
+# row's whole config, so the override must restate every key.
+#
+# M1b defaults: backend = pgvector (direct document_chunk read; OWUI
+# 0.8.12's retrieval endpoint is broken upstream, issue #14432). The static
+# kbListOverride is the single source of truth for BOTH backends — /kb,
+# the select/query whitelists, and the pgvector app-level whitelist. A
+# non-empty list means zero network.
+#
+# M1b.5 rerank: fetchK cosine candidates → bge-reranker-v2-m3 (same gateway
+# + key as the embeddings) → min(k, topKReranker). Triggered when
+# rerankEnabled AND the dsh-credentials reference KB_EMBED_API_KEY
+# resolves; any rerank failure degrades to the cosine top-k (result
+# annotated degraded: rerank-unavailable).
+#
+# Secrets never go here or into any config value: apiKeyRef / pgUrlRef /
+# embeddingKeyRef are dsh-credentials REFERENCES (the DSN value is the
+# full postgres://kb_readonly:…@host:5432/powergpt string); the values
+# live in $DSH_HOME/.credentials.yaml (e.g. OWUI_PG_READONLY_URL).
+# Prerequisite: the DBA has run m0/kb_readonly.sql (kb_readonly role + RLS
+# policy limited to the two KB UUIDs below).
+- insert:
+    - id: kb-query
+      name: "dsh-kb-query"
+      inject: [webServer, tools]
+      config:
+        backend: pgvector
+        enabled: true
+        openwebuiUrl: ""
+        apiKeyRef: OPENWEBUI_API_KEY
+        pgUrlRef: OWUI_PG_READONLY_URL
+        pgTableName: document_chunk
+        embeddingUrl: ""
+        embeddingModel: ""
+        embeddingKeyRef: ""
+        embeddingDim: 0
+        k: 8
+        maxChunkChars: 1200
+        contextBudget: 6000
+        trustedHosts: []
+        kbListOverride:
+          - id: 85a173a4-af87-4a70-b91a-a3bf9e3bda59
+            name: "SUEZ Knowledge"
+            description: "公司内部知识库（SUEZ Knowledge，约 1,671 chunks）"
+          - id: 71dfcd55-6f09-4c39-a698-e29eaf398b1a
+            name: "Water Treatment Documents"
+            description: "水处理技术文档库（Water Treatment Documents，约 12,996 chunks）"
+        routePrefix: /kb
+        timeoutMs: 15000
+        rerankEnabled: true
+        rerankUrl: "https://api-gateway.suezasia.com/v1/rerank"
+        rerankModel: bge-reranker-v2-m3
+        fetchK: 20
+        topKReranker: 5

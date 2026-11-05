@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "KB Query",
+    "description": "Company knowledge-base (RAG) search for agents: the kb_search tool and the composer knowledge-base chip, over a static KB whitelist with pgvector (default) and OWUI retrieval backends."
+  }
+}

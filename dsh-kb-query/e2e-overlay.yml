@@ -1,0 +1,50 @@
+# E2E smoke overlay: mounts dsh-kb-query from this checkout.
+# The loader resolves `name` as an ESM specifier against the profile dir
+# (.e2e-home/profiles/web), so three levels up is the workspace root and
+# `dsh-kb-query/index.js` below it is the plugin entry (same baseline as the
+# sibling root e2e-overlay.yml). Applied per-invocation via
+# `dsh web --patch dsh-kb-query/e2e-overlay.yml`; never write this into the
+# profile's cordis.patch.yml.
+#
+# M1b smoke (backend = pgvector): the KB list comes from the static
+# kbListOverride (no OWUI needed for /kb), but /kb/query needs the
+# embedding gateway (embeddingUrl / embeddingModel) and the read-only PG
+# DSN (OWUI_PG_READONLY_URL) in dsh-credentials; the rerank stage (M1b.5)
+# additionally triggers on the shared gateway key KB_EMBED_API_KEY (degrades
+# to the cosine order when absent). Prerequisite: the DBA has run
+# m0/kb_readonly.sql. Fill the two values below for the smoke run; the DSN
+# / embedding key themselves stay in dsh-credentials and are never
+# written here.
+- insert:
+    - id: kb-query
+      name: "../../../dsh-kb-query/index.js"
+      inject: [webServer, tools]
+      config:
+        backend: pgvector
+        enabled: true
+        openwebuiUrl: ""
+        apiKeyRef: OPENWEBUI_API_KEY
+        pgUrlRef: OWUI_PG_READONLY_URL
+        pgTableName: document_chunk
+        embeddingUrl: "https://api-gateway.suezasia.com/v1"
+        embeddingModel: bce-embedding-base_v1
+        embeddingKeyRef: ""
+        embeddingDim: 0
+        k: 8
+        maxChunkChars: 1200
+        contextBudget: 6000
+        trustedHosts: []
+        kbListOverride:
+          - id: 85a173a4-af87-4a70-b91a-a3bf9e3bda59
+            name: "SUEZ Knowledge"
+            description: "公司内部知识库（SUEZ Knowledge，约 1,671 chunks）"
+          - id: 71dfcd55-6f09-4c39-a698-e29eaf398b1a
+            name: "Water Treatment Documents"
+            description: "水处理技术文档库（Water Treatment Documents，约 12,996 chunks）"
+        routePrefix: /kb
+        timeoutMs: 15000
+        rerankEnabled: true
+        rerankUrl: "https://api-gateway.suezasia.com/v1/rerank"
+        rerankModel: bge-reranker-v2-m3
+        fetchK: 20
+        topKReranker: 5

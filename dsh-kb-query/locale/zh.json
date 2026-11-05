@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "知识库查询 (KB Query)",
+    "description": "企业知识库（RAG）检索：kb_search 工具与输入框知识库选择器，基于静态 KB 白名单，pgvector（默认）/ OWUI 双检索后端。"
+  }
+}

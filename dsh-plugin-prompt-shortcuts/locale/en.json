@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prompt Shortcuts",
+    "description": "Save frequently used prompts as shortcut buttons. Managed from Settings → Prompt Shortcuts; on the New Session page the buttons sit right of the mode selector; prompts support {{variable}} placeholders collected before fill."
+  }
+}

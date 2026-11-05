@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- dsh-kb-query: open book with a search lens -->
+  <g fill="none" stroke="#8b9cf7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 18 C 26 13, 15 12, 8 15 V 45 C 15 42, 26 43, 32 48"/>
+    <path d="M32 18 C 38 13, 49 12, 56 15 V 45 C 49 42, 38 43, 32 48"/>
+    <line x1="32" y1="18" x2="32" y2="48"/>
+    <circle cx="41" cy="42" r="10"/>
+    <line x1="48" y1="50" x2="57" y2="58"/>
+  </g>
+</svg>
