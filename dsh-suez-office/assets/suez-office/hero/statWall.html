@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>hero · statWall</title>
+<style>
+  body { width: 1920px; height: 1080px; position: relative; overflow: hidden; background: {{c_light}};
+         font-family: "Poppins", "方正准圆_GBK", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
+  .display { font-family: "Poppins", "方正粗圆_GBK", "Microsoft YaHei", sans-serif; }
+
+  .band  { position: absolute; left: 0; top: 0; width: 1920px; height: 8px; background: {{c_dark}}; }
+  .h1 { position: absolute; left: 164px; top: 452px; width: 1592px; height: 1px; background: {{c_grid}}; }
+  .h2 { position: absolute; left: 164px; top: 712px; width: 1592px; height: 1px; background: {{c_grid}}; }
+  .v1 { position: absolute; left: 700px; top: 470px; width: 1px; height: 224px; background: {{c_grid}}; }
+  .v2 { position: absolute; left: 1236px; top: 470px; width: 1px; height: 224px; background: {{c_grid}}; }
+  .v3 { position: absolute; left: 700px; top: 730px; width: 1px; height: 224px; background: {{c_grid}}; }
+  .v4 { position: absolute; left: 1236px; top: 730px; width: 1px; height: 224px; background: {{c_grid}}; }
+
+  .t { position: absolute; margin: 0; }
+  .eyebrow { left: 164px; top: 148px; font-size: 20px; letter-spacing: .2em; color: {{c_muted}}; font-weight: 600; }
+  .title   { left: 160px; top: 280px; width: 1560px; font-size: 58px; line-height: 1.2; color: {{c_dark}};
+             font-weight: 700; letter-spacing: -.01em; }
+  .n { font-size: 84px; line-height: 1; color: {{c_dark}}; font-weight: 700; letter-spacing: -.03em; }
+  .l { font-size: 19px; line-height: 1.4; color: {{c_muted}}; }
+  .foot { left: 164px; top: 1000px; width: 1500px; font-size: 16px; color: {{c_muted}}; }
+</style>
+</head>
+<body>
+  <div class="band"></div>
+  <div class="h1"></div><div class="h2"></div>
+  <div class="v1"></div><div class="v2"></div><div class="v3"></div><div class="v4"></div>
+
+  <p class="t eyebrow" data-name="Eyebrow">{{eyebrow}}</p>
+  <h1 class="t title display" data-name="Title">{{title}}</h1>
+
+  <p class="t n display" data-name="KPI1 value" style="left:164px;top:512px">{{v1}}</p>
+  <p class="t l" data-name="KPI1 label" style="left:166px;top:626px;width:460px">{{l1}}</p>
+  <p class="t n display" data-name="KPI2 value" style="left:760px;top:512px">{{v2}}</p>
+  <p class="t l" data-name="KPI2 label" style="left:762px;top:626px;width:440px">{{l2}}</p>
+  <p class="t n display" data-name="KPI3 value" style="left:1296px;top:512px">{{v3}}</p>
+  <p class="t l" data-name="KPI3 label" style="left:1298px;top:626px;width:440px">{{l3}}</p>
+
+  <p class="t n display" data-name="KPI4 value" style="left:164px;top:772px">{{v4}}</p>
+  <p class="t l" data-name="KPI4 label" style="left:166px;top:886px;width:460px">{{l4}}</p>
+  <p class="t n display" data-name="KPI5 value" style="left:760px;top:772px">{{v5}}</p>
+  <p class="t l" data-name="KPI5 label" style="left:762px;top:886px;width:440px">{{l5}}</p>
+  <p class="t n display" data-name="KPI6 value" style="left:1296px;top:772px">{{v6}}</p>
+  <p class="t l" data-name="KPI6 label" style="left:1298px;top:886px;width:440px">{{l6}}</p>
+
+  <p class="t foot" data-name="Foot">{{foot}}</p>
+</body>
+</html>

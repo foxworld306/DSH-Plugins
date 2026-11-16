@@ -1,0 +1,60 @@
+{
+  "name": "dsh-suez-office",
+  "version": "1.0.2",
+  "description": "DSH-SUEZ-Office: the Office toolkit for DeepSeek Harness (Windows, no Python). Creates and edits PowerPoint / Word / Excel / PDF on this machine: brand-compliant .pptx seeded from the official SUEZ template (masters, layouts, theme and embedded fonts preserved, 29 page archetypes, 13 native charts), free-form hand-laid decks, .docx and .xlsx from a JSON spec, surgical edits to files users already have (text, pictures, chart values, table cells, cells with formulas), comments and tracked-change cleanup, PDF export, plus structure dump, package gates and geometric lint with real Office rendering for QA.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "assets",
+    "docs",
+    "test/*.mjs",
+    "test/fixtures",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "suez",
+    "office",
+    "pptx",
+    "docx",
+    "xlsx",
+    "pdf",
+    "presentation",
+    "word",
+    "excel",
+    "layout",
+    "ooxml",
+    "design-system"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "author": "Rio Zhao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foxworld306/DSH-Plugins.git",
+    "directory": "dsh-suez-office"
+  },
+  "homepage": "https://github.com/foxworld306/DSH-Plugins/tree/main/dsh-suez-office",
+  "bugs": {
+    "url": "https://github.com/foxworld306/DSH-Plugins/issues"
+  }
+}

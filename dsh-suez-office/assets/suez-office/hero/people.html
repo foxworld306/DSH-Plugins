@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>hero · people</title>
+<style>
+  body { width: 1920px; height: 1080px; position: relative; overflow: hidden; background: {{c_panel}};
+         font-family: "Poppins", "方正准圆_GBK", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
+  .display { font-family: "Poppins", "方正粗圆_GBK", "Microsoft YaHei", sans-serif; }
+
+  .band { position: absolute; left: 0; top: 0; width: 1920px; height: 8px; background: {{c_dark}}; }
+  .card { position: absolute; top: 452px; width: 480px; height: 380px; background: {{c_light}}; }
+  .avatar { position: absolute; top: 500px; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; background: {{c_grid}}; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .t { position: absolute; margin: 0; }
+  .eyebrow { left: 164px; top: 148px; font-size: 20px; letter-spacing: .2em; color: {{c_muted}}; font-weight: 600; }
+  .title   { left: 160px; top: 280px; width: 1560px; font-size: 54px; line-height: 1.22; color: {{c_dark}};
+             font-weight: 700; letter-spacing: -.01em; }
+  .n { left: 0; top: 664px; width: 420px; font-size: 26px; color: {{c_dark}}; font-weight: 700; }
+  .r { left: 0; top: 706px; width: 420px; font-size: 17px; color: {{c_muted}}; }
+  .q { left: 0; top: 754px; width: 424px; font-size: 18px; line-height: 1.55; color: {{c_ink}}; }
+  .foot { left: 164px; top: 1000px; width: 1500px; font-size: 16px; color: {{c_muted}}; }
+</style>
+</head>
+<body>
+  <div class="band"></div>
+
+  <div class="card" style="left:160px"></div>
+  <div class="avatar" style="left:196px"><img src="{{avatar1}}" alt=""></div>
+
+  <div class="card" style="left:720px"></div>
+  <div class="avatar" style="left:756px"><img src="{{avatar2}}" alt=""></div>
+
+  <div class="card" style="left:1280px"></div>
+  <div class="avatar" style="left:1316px"><img src="{{avatar3}}" alt=""></div>
+
+  <p class="t eyebrow" data-name="Eyebrow">{{eyebrow}}</p>
+  <h1 class="t title display" data-name="Title">{{title}}</h1>
+
+  <p class="t n display" data-name="Name1" style="left:196px">{{name1}}</p>
+  <p class="t r" data-name="Role1" style="left:196px">{{role1}}</p>
+  <p class="t q" data-name="Quote1" style="left:196px">{{quote1}}</p>
+
+  <p class="t n display" data-name="Name2" style="left:756px">{{name2}}</p>
+  <p class="t r" data-name="Role2" style="left:756px">{{role2}}</p>
+  <p class="t q" data-name="Quote2" style="left:756px">{{quote2}}</p>
+
+  <p class="t n display" data-name="Name3" style="left:1316px">{{name3}}</p>
+  <p class="t r" data-name="Role3" style="left:1316px">{{role3}}</p>
+  <p class="t q" data-name="Quote3" style="left:1316px">{{quote3}}</p>
+
+  <p class="t foot" data-name="Foot">{{foot}}</p>
+</body>
+</html>

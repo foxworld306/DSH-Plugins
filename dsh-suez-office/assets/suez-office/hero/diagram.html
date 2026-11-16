@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>hero · diagram</title>
+<style>
+  body {
+    width: 1920px; height: 1080px; position: relative; overflow: hidden; background: {{c_light}};
+    font-family: "Poppins", "方正准圆_GBK", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: "Poppins", "方正粗圆_GBK", "Microsoft YaHei", sans-serif; }
+
+  /* decoration: a 4-step flow built from divs — the labels on top are real text */
+  .node   { position: absolute; top: 430px; width: 300px; height: 128px; background: {{c_panel}}; border-top: 4px solid {{c_accent}}; }
+  .node.dark { background: {{c_dark}}; border-top-color: {{c_blue}}; }
+  .link   { position: absolute; top: 494px; width: 92px; height: 2px; background: {{c_grid}}; }
+  .arrow  { position: absolute; top: 487px; width: 0; height: 0; border-left: 12px solid {{c_grid}};
+            border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+  .band   { position: absolute; left: 0; top: 0; width: 1920px; height: 8px; background: {{c_dark}}; }
+
+  .t { position: absolute; margin: 0; }
+  .eyebrow { left: 164px; top: 160px; font-size: 20px; letter-spacing: .2em; color: {{c_muted}}; font-weight: 600; }
+  .title   { left: 160px; top: 306px; width: 1500px; font-size: 64px; line-height: 1.2; color: {{c_dark}};
+             font-weight: 700; letter-spacing: -.01em; }
+  .n1 { left: 190px;  top: 452px; width: 240px; font-size: 24px; line-height: 1.3; color: {{c_dark}}; font-weight: 700; }
+  .n2 { left: 585px;  top: 452px; width: 240px; font-size: 24px; line-height: 1.3; color: {{c_dark}}; font-weight: 700; }
+  .n3 { left: 980px;  top: 452px; width: 240px; font-size: 24px; line-height: 1.3; color: {{c_dark}}; font-weight: 700; }
+  .n4 { left: 1375px; top: 452px; width: 240px; font-size: 24px; line-height: 1.3; color: {{c_light}}; font-weight: 700; }
+  .d1 { left: 190px;  top: 490px; width: 250px; font-size: 17px; line-height: 1.45; color: {{c_muted}}; }
+  .d2 { left: 585px;  top: 490px; width: 250px; font-size: 17px; line-height: 1.45; color: {{c_muted}}; }
+  .d3 { left: 980px;  top: 490px; width: 250px; font-size: 17px; line-height: 1.45; color: {{c_muted}}; }
+  .d4 { left: 1375px; top: 490px; width: 250px; font-size: 17px; line-height: 1.45; color: {{c_tint}}; }
+  .foot { left: 164px; top: 900px; width: 1400px; font-size: 17px; color: {{c_muted}}; }
+</style>
+</head>
+<body>
+  <div class="band"></div>
+  <div class="node"      style="left:160px"></div>
+  <div class="node"      style="left:555px"></div>
+  <div class="node"      style="left:950px"></div>
+  <div class="node dark" style="left:1345px"></div>
+  <div class="link"      style="left:460px"></div><div class="arrow" style="left:552px"></div>
+  <div class="link"      style="left:855px"></div><div class="arrow" style="left:947px"></div>
+  <div class="link"      style="left:1250px"></div><div class="arrow" style="left:1342px"></div>
+
+  <p class="t eyebrow" data-name="Eyebrow">{{eyebrow}}</p>
+  <h1 class="t title display" data-name="Title">{{title}}</h1>
+  <p class="t n1 display" data-name="Step1 title">{{step1}}</p>
+  <p class="t n2 display" data-name="Step2 title">{{step2}}</p>
+  <p class="t n3 display" data-name="Step3 title">{{step3}}</p>
+  <p class="t n4 display" data-name="Step4 title">{{step4}}</p>
+  <p class="t d1" data-name="Step1 note">{{note1}}</p>
+  <p class="t d2" data-name="Step2 note">{{note2}}</p>
+  <p class="t d3" data-name="Step3 note">{{note3}}</p>
+  <p class="t d4" data-name="Step4 note">{{note4}}</p>
+  <p class="t foot" data-name="Foot">{{foot}}</p>
+</body>
+</html>

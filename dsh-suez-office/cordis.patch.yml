@@ -1,0 +1,4 @@
+# DSH-SUEZ-Office — mounted next to dsh-office-docs-win; the two do not share state.
+- insert:
+    - id: suez-office
+      name: dsh-suez-office

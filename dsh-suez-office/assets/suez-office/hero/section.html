@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>hero · section</title>
+<style>
+  body {
+    width: 1920px; height: 1080px; position: relative; overflow: hidden;
+    background: {{c_panel}};
+    font-family: "Poppins", "方正准圆_GBK", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display { font-family: "Poppins", "方正粗圆_GBK", "Microsoft YaHei", sans-serif; }
+
+  /* decoration */
+  .field { position: absolute; left: 0; top: 0; width: 1180px; height: 1080px; background: {{c_dark}}; }
+  .edge { position: absolute; left: 1180px; top: 0; width: 120px; height: 1080px;
+          background: linear-gradient(90deg, {{c_dark}}, rgba(3,15,64,0)); }
+  .ghost-num {
+    position: absolute; right: -60px; top: 520px; width: 700px; height: 560px;
+    border: 12px solid rgba(3,15,64,.10); border-radius: 50%;
+  }
+  .accent { position: absolute; left: 0; top: 0; width: 20px; height: 1080px; background: {{c_accent}}; }
+  .rule { position: absolute; left: 164px; top: 690px; width: 96px; height: 6px; background: {{c_accent}}; }
+  .stripes {
+    position: absolute; right: 0; top: 0; width: 620px; height: 1080px;
+    background-image: repeating-linear-gradient(115deg, rgba(3,15,64,.16) 0 2px, transparent 2px 16px);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%);
+            mask-image: linear-gradient(90deg, transparent, #000 70%);
+  }
+
+  /* text */
+  .t { position: absolute; margin: 0; }
+  .number  { left: 160px; top: 210px; font-size: 200px; line-height: 1; color: {{c_accent}}; font-weight: 700; letter-spacing: -.03em; }
+  .title   { left: 164px; top: 470px; width: 940px; font-size: 76px; line-height: 1.16; color: {{c_light}};
+             font-weight: 700; letter-spacing: -.01em; }
+  .subtitle{ left: 168px; top: 740px; width: 880px; font-size: 28px; line-height: 1.45; color: {{c_tint}}; }
+</style>
+</head>
+<body>
+  <div class="field"></div><div class="edge"></div><div class="ghost-num"></div><div class="stripes"></div>
+  <div class="accent"></div><div class="rule"></div>
+
+  <p class="t number display" data-name="Number">{{number}}</p>
+  <h1 class="t title display" data-name="Title">{{title}}</h1>
+  <p class="t subtitle" data-name="Subtitle">{{subtitle}}</p>
+</body>
+</html>

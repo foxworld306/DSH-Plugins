@@ -11,6 +11,7 @@ DeepSeek Harness（DSH）个人插件集合 — Rio Zhao（SUEZ Asia）。
 | [dsh-office-docs-win](./dsh-office-docs-win) | 1.0.1 | Windows 上创建/读取/校验 Office 文件（.pptx/.docx/.xlsx/.pdf），免 Python，含 Office COM 渲染 |
 | [dsh-plugin-prompt-shortcuts](./dsh-plugin-prompt-shortcuts) | 1.5.1 | 提示词快捷按钮：`{{变量}}` 占位、中英文双版本、设置页管理、一键生成英文版 |
 | [dsh-plugin-outlook-owa](./dsh-plugin-outlook-owa) | 0.5.2 | 读写 Outlook Web（OWA）邮件与日历，复用本机浏览器会话，自带技能文档（SKILL.md） |
+| [dsh-suez-office](./dsh-suez-office) | 1.0.2 | SUEZ 的 Office 工具箱：模板模式或自由排版的 PPTX（29 原型 + 13 原生图表）、Word / Excel / PDF 的生成与编辑、批注与修订清洗，全部走包门禁 + 真实渲染质检 |
 
 ## 安装
 
@@ -21,6 +22,7 @@ dsh plugin --profile web add dsh-kb-query
 dsh plugin --profile web add dsh-office-docs-win
 dsh plugin --profile web add dsh-plugin-prompt-shortcuts
 dsh plugin --profile web add dsh-plugin-outlook-owa
+dsh plugin --profile web add dsh-suez-office
 ```
 
 装完重启 DSH 即可。各插件的详细用法与配置说明见其 README。
