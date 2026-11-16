@@ -1,3 +1,11 @@
+## 1.0.3 — 2026-11-16 · npm 首发
+
+- 发布到 npm：`dsh-suez-office@1.0.3`（latest），GitHub 仓库 https://github.com/foxworld306/DSH-Plugins
+- 发布链路踩到的坑（记录下来，省下一次的时间）：
+  - 默认 registry 是 npmmirror，发布必须显式 `--registry https://registry.npmjs.org`
+  - 账号开了 2FA：granular token 要勾 **Bypass 2FA** 且 **All packages**，否则发布被拒（403）或进暂存队列
+  - 发布成功但 registry 有延迟，`npm view versions` 可能几分钟后才看到新版本；再发会报 "cannot publish over the previously published versions"
+  - `0.0.0-stage` 是 npm 给新包名留的占位桩（`"stub": true`），不影响安装
 ## 1.0.2 — 2026-11-16
 
 - 修 1.0.1 漏掉的一半：`deck.mjs` 与两个测试脚本（`test/run.mjs`、`test/hero.mjs`）现在也默认用内置模板，`node test/run.mjs` 不带 `--seed` 就能跑。
