@@ -525,10 +525,15 @@ export function createPgvectorBackend({ config, resolveCredential, log, poolFact
       `                     (g.principal_type IN ('user','anyone') AND g.principal_id IN ('*', (SELECT id::text FROM me))) ` +
       `                  OR (g.principal_type = 'group' AND g.principal_id IN ` +
       `                        (SELECT gm.group_id::text FROM group_member gm WHERE gm.user_id = (SELECT id FROM me))))) ` +
-      // 注意：`access_control` 为 NULL / JSON null 的老库**不能**当作公开。
-      // 生产实测（powergpt@0.8.12）：真正的公开库在 access_grant 里有
-      // principal_id='*' 的 read 授权（全库仅 2 条）；其余 null-ACL 老库
-      // 没有任何 grant，对非 owner 一律不可读。
+      // ACL 口径（与部署方确认过的三条，缺一不可、也不多加）：
+      //   1) owner                     = k.user_id = me
+      //   2) 显式共享                  = access_grant 里 read 授给 '*'（公开）
+      //                                  / 我本人 / 我所在的组
+      //   3) 遗留 JSON 共享            = access_control.read.user_ids / group_ids
+      // 特别注意：`access_control` 为 SQL NULL 或 JSON null 的老库**不算公开**。
+      // 生产库实测 49 个这类库，OWUI 管理员能看见它们只是因为管理员越权
+      // （BYPASS_ADMIN_ACCESS_CONTROL），普通用户看不到，所以这里也不放行 ——
+      // 本插件刻意不实现管理员越权：列的是"该身份有权读的"，不是"管理员能解锁的"。
       `   OR (k.access_control -> 'read' -> 'user_ids') ? (SELECT id::text FROM me) ` +
       `   OR EXISTS (SELECT 1 FROM group_member gm2 WHERE gm2.user_id = (SELECT id FROM me) ` +
       `                AND (k.access_control -> 'read' -> 'group_ids') ? gm2.group_id::text) ) ` +

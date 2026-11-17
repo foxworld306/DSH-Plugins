@@ -688,6 +688,22 @@ export function apply(ctx, config) {
               const pgDirect = typeof e.pgUrl === "string" && e.pgUrl.trim() !== "";
               const rerankDirect = typeof e.rerankApiKey === "string" && e.rerankApiKey.trim() !== "";
               const who = identityProvider !== undefined ? await identity.resolve() : { email: undefined, source: IDENTITY_SOURCES.UNRESOLVED };
+              // Counts for BOTH scopes so the settings page can show
+              // "我能访问的全部 (53) / 只显示我创建的 (4)" and the choice stops
+              // looking like a no-op. Best effort: a DB hiccup just omits them.
+              let scopeCounts;
+              if (identityProvider !== undefined && typeof who.email === "string" && who.email !== "") {
+                try {
+                  const pg = getBackend("pgvector");
+                  const [accessible, owned] = await Promise.all([
+                    pg.listVisible(who.email, "accessible"),
+                    pg.listVisible(who.email, "owned"),
+                  ]);
+                  scopeCounts = { accessible: accessible.length, owned: owned.length };
+                } catch {
+                  scopeCounts = undefined;
+                }
+              }
               let kbList = [];
               try {
                 kbList = await listKbs();
@@ -714,6 +730,7 @@ export function apply(ctx, config) {
                   personalKbEnabled: identityProvider !== undefined,
                   kbCount: kbList.length,
                 },
+                ...(scopeCounts !== undefined ? { scopeCounts } : {}),
                 credentials: { pg: pgCred || pgDirect, embed: embedCred, rerank: rerankCred || rerankDirect },
                 sources: {
                   pg: pgDirect ? "policy" : pgCred ? "credentials" : null,

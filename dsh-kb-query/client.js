@@ -138,6 +138,7 @@ window.__ModuleLoader__.load({
   "settings.scope": "知识库范围",
   "settings.scope.accessible": "我能访问的全部",
   "settings.scope.owned": "只显示我创建的",
+  "settings.scopeSame": "（当前账号没有别人共享给你的库，两种范围结果相同）",
       "settings.fetchK": "候选池 fetchK",
       "settings.topK": "重排上限 topK",
       "settings.embeddingModel": "嵌入模型",
@@ -197,6 +198,7 @@ window.__ModuleLoader__.load({
   "settings.scope": "Knowledge-base scope",
   "settings.scope.accessible": "Everything I can access",
   "settings.scope.owned": "Only what I created",
+  "settings.scopeSame": " (nothing is shared with this account, so both scopes match)",
       "settings.fetchK": "Candidate pool fetchK",
       "settings.topK": "Rerank cap topK",
       "settings.embeddingModel": "Embedding model",
@@ -748,7 +750,8 @@ window.__ModuleLoader__.load({
           e("span", { className: "kbq-setLabel" }, t("settings.scope")),
           // Two radios (single choice) beat a lone checkbox: the checkbox said
           // "只显示我创建的" with no visible alternative, which read as a filter
-          // rather than a mode.
+          // rather than a mode. Counts come from the host so the choice shows
+          // its effect before saving.
           e("span", { className: "kbq-setRadios" }, [
             e("label", { className: "kbq-setCheck", key: "acc" }, [
               e("input", {
@@ -757,7 +760,7 @@ window.__ModuleLoader__.load({
                 checked: draft.personalKbScope !== "owned",
                 onChange: () => setDraft({ ...draft, personalKbScope: "accessible" })
               }),
-              ` ${t("settings.scope.accessible")}`
+              ` ${t("settings.scope.accessible")}${typeof data.scopeCounts?.accessible === "number" ? ` (${data.scopeCounts.accessible})` : ""}`
             ]),
             e("label", { className: "kbq-setCheck", key: "own" }, [
               e("input", {
@@ -766,8 +769,13 @@ window.__ModuleLoader__.load({
                 checked: draft.personalKbScope === "owned",
                 onChange: () => setDraft({ ...draft, personalKbScope: "owned" })
               }),
-              ` ${t("settings.scope.owned")}`
-            ])
+              ` ${t("settings.scope.owned")}${typeof data.scopeCounts?.owned === "number" ? ` (${data.scopeCounts.owned})` : ""}`
+            ]),
+            typeof data.scopeCounts?.accessible === "number" &&
+            typeof data.scopeCounts?.owned === "number" &&
+            data.scopeCounts.accessible === data.scopeCounts.owned
+              ? e("span", { className: "kbq-setHint", key: "same" }, t("settings.scopeSame"))
+              : null
           ])
         ]),
         e("div", { className: "kbq-setRow", key: "k" }, [
