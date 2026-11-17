@@ -91,3 +91,50 @@ export function makeKbListProvider({ overrideList, fetchList, ttlMs = 30000, log
   };
   return { source: "owui", list };
 }
+
+/**
+ * Build an IDENTITY-scoped KB list provider (personal knowledge bases).
+ *
+ * `fetchVisible()` resolves "which knowledge bases may the CURRENT identity
+ * read" (the DB's `kb_visible_kbs(email)` through the pgvector backend).
+ * Every failure path degrades to `fallbackList` (the static whitelist) so a
+ * missing DBA function, an unreachable database, or an unresolved identity
+ * can never take the chip down — the two public KBs stay usable, and the
+ * next refresh after `ttlMs` tries again.
+ *
+ * @param {object} options
+ * @param {() => Promise<Array<{id: string, name: string, description?: string}>>} options.fetchVisible
+ * @param {Array<{id: string, name: string, description?: string}>} [options.fallbackList]
+ * @param {number} [options.ttlMs=60000]
+ * @param {{warn?: Function}} [options.log]
+ * @returns {{source: "identity", list: () => Promise<Array<object>>, currentSource: () => "identity"|"fallback"}}
+ */
+export function makeIdentityKbListProvider({ fetchVisible, fallbackList = [], ttlMs = 60000, log }) {
+  const fallback = Array.isArray(fallbackList) ? fallbackList : [];
+  const cache = { at: 0, data: null, source: "fallback" };
+  const list = async () => {
+    const now = Date.now();
+    if (cache.data !== null && now - cache.at < ttlMs) return cache.data;
+    try {
+      const data = await fetchVisible();
+      if (!Array.isArray(data) || data.length === 0) throw new Error("visible list is empty");
+      cache.at = now;
+      cache.data = data;
+      cache.source = "identity";
+      return data;
+    } catch (err) {
+      const why = (err !== null && typeof err === "object" && (err.code || err.message)) || "error";
+      if (cache.data !== null && cache.source === "identity") {
+        // Keep serving the last good identity list while the DB hiccups.
+        log?.warn?.(`kb: visible list refresh failed (${why}); serving the cached identity list`);
+        return cache.data;
+      }
+      log?.warn?.(`kb: visible list unavailable (${why}); falling back to the static whitelist`);
+      cache.at = now;
+      cache.data = fallback;
+      cache.source = "fallback";
+      return fallback;
+    }
+  };
+  return { source: "identity", list, currentSource: () => cache.source };
+}

@@ -84,6 +84,24 @@ Design & mechanism facts: `docs/kb-query-plugin-plan.md` (this repo).
 dsh plugin --profile web add C:\path\to\trust-header-sso-dsh\dsh-kb-query
 ```
 
+### 发布：打包时注入密钥（仓库里永远是占位符）
+
+仓库中的 `cordis.patch.yml` 只保留 `pgUrl: ""` / `rerankApiKey: ""` 占位符；
+**发布产物**在打包时从环境变量注入真实值，所以用户"装完即用"，而 git 里没有任何密钥：
+
+```powershell
+$env:KB_PG_URL        = "postgres://kb_readonly:...@host:5432/powergpt"   # 建议只读角色
+$env:KB_EMBED_API_KEY = "sk-..."                                          # 嵌入/rerank 同一把 key
+npm run release:pack        # 注入 → npm pack → 无论成败都还原
+npm run release:publish     # 同上，但发布到 registry
+```
+
+- 直接 `npm pack` / `npm publish` 也行：`prepack` 注入、`postpack` 还原、`prepublishOnly` 用 `secrets:check` 拦住"把密钥提交进仓库"的情况。
+- 若环境设置了 `npm_config_ignore_scripts=true`（会跳过生命周期钩子），请用 `npm run release:pack`。
+- 手动操作：`node scripts/inject-kb-secrets.mjs {inject|restore|check|status}`。
+- `scripts/` 目录不进产物（`files` 白名单不含它），密钥只出现在打出来的 `cordis.patch.yml` 里。
+- 备选（更干净）：由公司 policy 按用户下发这两个值，插件包内永远保持占位符 —— 见 `dsh-kb-personal/03-policy-and-fallback-config.md`。
+
 Then restart `dsh web` (host-half changes do not HMR). Configure the
 deployment values in the profile's own `cordis.patch.yml` (an override
 replaces the row's whole config — restate every key, see

@@ -195,12 +195,18 @@ export function createPgvectorBackend({ config, resolveCredential, log, poolFact
    * @throws {PgvectorError} `pg-not-configured` when the value is absent.
    */
   const dsn = async () => {
+    // ① policy 直达值（通常是"每用户 DSN"：身份已内嵌在
+    //    `options=-c kb.email=<本人邮箱>` 里，插件不需要也不允许改）。
+    const direct = typeof config.pgUrl === "string" ? config.pgUrl.trim() : "";
+    if (direct !== "") return direct;
+
+    // ② 兜底：dsh-credentials 引用（凭据文件 / .env）。
     const hit = await resolveCredential(config.pgUrlRef);
     const value = hit !== undefined && hit !== null ? hit.value : undefined;
     if (typeof value !== "string" || value === "") {
       throw new PgvectorError(
         "pg-not-configured",
-        `pg DSN credential is not configured (credentials reference: ${config.pgUrlRef})`
+        `pg DSN is not configured (config.pgUrl or credentials reference: ${config.pgUrlRef})`
       );
     }
     return value;
@@ -346,6 +352,11 @@ export function createPgvectorBackend({ config, resolveCredential, log, poolFact
    * @returns {Promise<string>}
    */
   async function resolveEmbedKey() {
+    // ① policy 直达值：嵌入与 rerank 是同一个网关、同一把 key，所以一个
+    //    `rerankApiKey` 同时覆盖两段，policy 不必下发两份。
+    const direct = typeof config.rerankApiKey === "string" ? config.rerankApiKey.trim() : "";
+    if (direct !== "") return direct;
+    // ② 凭据引用（"" = 免鉴权网关；实测生产网关需要 key，会返回 401）
     if (config.embeddingKeyRef === "") return "";
     const hit = await resolveCredential(config.embeddingKeyRef);
     const value = hit !== undefined && hit !== null ? hit.value : undefined;
@@ -406,7 +417,7 @@ export function createPgvectorBackend({ config, resolveCredential, log, poolFact
    * @returns {Promise<Array<{id: string, collectionName: string, text: string, vmetadata: object | null, dist: number}>>}
    * @throws {object} `kb-not-whitelisted` | `pg-*` | `embed-*` (see header)
    */
-  async function search({ kbId, query, k, allowedIds: allowed, signal }) {
+  async function search({ kbId, query, k, allowedIds: allowed, email, signal }) {
     if (signal !== undefined) signal.throwIfAborted?.();
     const whitelist =
       allowed instanceof Set ? allowed : new Set(Array.isArray(allowed) ? allowed : [...allowedIds]);
@@ -427,18 +438,45 @@ export function createPgvectorBackend({ config, resolveCredential, log, poolFact
     });
 
     // 2) connect (+ read-only fence) → 3) stored dim (cached) → 4) top-k.
+    // When an identity email is supplied the statements run inside ONE
+    // transaction so `SET LOCAL kb.email` binds the RLS decision to exactly
+    // this query and evaporates at COMMIT (no leakage to the pooled
+    // connection's next borrower).
     const client = await acquireClient();
+    let inTransaction = false;
     try {
-      await client.query("SET default_transaction_read_only = on");
+      if (typeof email === "string" && email !== "") {
+        await client.query("BEGIN");
+        inTransaction = true;
+        await client.query("SET LOCAL default_transaction_read_only = on");
+        // SET does not accept bind parameters; set_config(name, value, is_local)
+        // is the parameterized equivalent (local to this transaction).
+        await client.query("SELECT set_config('kb.email', $1, true)", [email]);
+      } else {
+        await client.query("SET default_transaction_read_only = on");
+      }
       const result = await runTopK(client, kbId, limit, vector, true);
-      return (result?.rows ?? []).map((row) => ({
+      const rows = (result?.rows ?? []).map((row) => ({
         id: row?.id,
         collectionName: row?.collection_name,
         text: row?.text,
         vmetadata: row?.vmetadata ?? null,
         dist: row?.dist,
       }));
+      if (inTransaction) {
+        await client.query("COMMIT");
+        inTransaction = false;
+      }
+      return rows;
     } catch (err) {
+      if (inTransaction) {
+        try {
+          await client.query("ROLLBACK");
+        } catch {
+          /* connection already broken — release() below discards it */
+        }
+        inTransaction = false;
+      }
       if (err instanceof PgvectorError || err instanceof EmbedError) throw err;
       if (isDimMismatch(err)) {
         // The re-probe/retry inside runTopK already happened; a second
@@ -461,17 +499,139 @@ export function createPgvectorBackend({ config, resolveCredential, log, poolFact
     }
   }
 
+  /**
+   * ACL 直查（无需 DBA 函数）：按 Open WebUI 0.8.12 的真实语义取"本人可读"。
+   *
+   * 生产实测（powergpt@0.8.12）：
+   *  - 公开库 = `access_grant` 里 `principal_id='*'` 的 read 授权（全库仅 2 条）；
+   *  - 私有库 = `access_control` 为 `{read:{user_ids:[],group_ids:[]}}`（或 null/SQL NULL）且无任何 grant；
+   *  - 显式共享 = `access_grant` 里点名 user / group 的 read 授权。
+   *
+   * 只读；参数化；不含任何 DDL。
+   */
+  async function listVisibleDirect(client, email, scope) {
+    const sql =
+      `WITH me AS (SELECT u.id FROM "user" u WHERE lower(u.email) = lower($1)) ` +
+      `SELECT k.id, k.name, coalesce(k.description, '') AS description, ` +
+      `(k.user_id = (SELECT id FROM me)) AS write_access, ` +
+      `CASE WHEN k.user_id = (SELECT id FROM me) THEN 'owner' ` +
+      `     WHEN EXISTS (SELECT 1 FROM access_grant g WHERE g.resource_type = 'knowledge' AND g.resource_id = k.id ` +
+      `                  AND g.permission = 'read' AND g.principal_type IN ('user','anyone') AND g.principal_id = '*') THEN 'public' ` +
+      `     ELSE 'grant' END AS acl_source ` +
+      `FROM knowledge k ` +
+      `WHERE ( k.user_id = (SELECT id FROM me) ` +
+      `   OR EXISTS (SELECT 1 FROM access_grant g WHERE g.resource_type = 'knowledge' AND g.resource_id = k.id ` +
+      `                AND g.permission = 'read' AND ( ` +
+      `                     (g.principal_type IN ('user','anyone') AND g.principal_id IN ('*', (SELECT id::text FROM me))) ` +
+      `                  OR (g.principal_type = 'group' AND g.principal_id IN ` +
+      `                        (SELECT gm.group_id::text FROM group_member gm WHERE gm.user_id = (SELECT id FROM me))))) ` +
+      // 注意：`access_control` 为 NULL / JSON null 的老库**不能**当作公开。
+      // 生产实测（powergpt@0.8.12）：真正的公开库在 access_grant 里有
+      // principal_id='*' 的 read 授权（全库仅 2 条）；其余 null-ACL 老库
+      // 没有任何 grant，对非 owner 一律不可读。
+      `   OR (k.access_control -> 'read' -> 'user_ids') ? (SELECT id::text FROM me) ` +
+      `   OR EXISTS (SELECT 1 FROM group_member gm2 WHERE gm2.user_id = (SELECT id FROM me) ` +
+      `                AND (k.access_control -> 'read' -> 'group_ids') ? gm2.group_id::text) ) ` +
+      (scope === "owned" ? `  AND k.user_id = (SELECT id FROM me) ` : ``) +
+      `ORDER BY (k.user_id = (SELECT id FROM me)) DESC, k.name`;
+    const result = await client.query(sql, [email]);
+    return (result?.rows ?? []).map((row) => {
+      const id = String(row?.id ?? "");
+      const entry = {
+        id,
+        name: typeof row?.name === "string" && row.name !== "" ? row.name : id,
+        source: "personal",
+      };
+      if (typeof row?.description === "string" && row.description !== "") entry.description = row.description;
+      if (row?.write_access === true) entry.writeAccess = true;
+      if (typeof row?.acl_source === "string") entry.acl = row.acl_source;
+      return entry;
+    });
+  }
+
+  /**
+   * Knowledge bases the SUPPLIED identity may read (personal KBs included).
+   *
+   * Preference order:
+   *  1. the DBA-installed `kb_visible_kbs(text)` helper (least-privilege DSNs);
+   *  2. a direct read-only ACL query (works with a DSN that can read
+   *     knowledge/access_grant/group_member/user — e.g. today's dbadmin DSN),
+   *     mirroring OWUI 0.8.12's own rule: owner, or a read grant to the
+   *     wildcard / me / my groups, or a public (null access_control).
+   *
+   * @param {string} email the current identity
+   * @param {"accessible"|"owned"} [scope] "owned" = only KBs I created
+   * @returns {Promise<Array<{id: string, name: string, description?: string, writeAccess?: boolean, acl?: string, source: "personal"}>>}
+   * @throws {PgvectorError} `pg-identity-missing` | `pg-acl-unavailable` | `pg-*`
+   */
+  async function listVisible(email, scope = "accessible") {
+    if (typeof email !== "string" || email.trim() === "") {
+      throw new PgvectorError("pg-identity-missing", "an identity email is required to list visible knowledge bases");
+    }
+    const client = await acquireClient();
+    try {
+      await client.query("SET default_transaction_read_only = on");
+      try {
+        const result = await client.query("SELECT id, name, description, write_access FROM kb_visible_kbs($1)", [
+          email.trim(),
+        ]);
+        return (result?.rows ?? []).map((row) => {
+          const id = String(row?.id ?? "");
+          const entry = {
+            id,
+            name: typeof row?.name === "string" && row.name !== "" ? row.name : id,
+            source: "personal",
+          };
+          if (typeof row?.description === "string" && row.description !== "") entry.description = row.description;
+          if (row?.write_access === true) entry.writeAccess = true;
+          return entry;
+        });
+      } catch (err) {
+        // 42883 = undefined_function → fall back to the direct ACL query.
+        if (err?.code !== "42883") throw err;
+        log?.info?.("kb: kb_visible_kbs(text) absent — using the direct ACL query instead");
+        return await listVisibleDirect(client, email.trim(), scope);
+      }
+    } catch (err) {
+      if (err instanceof PgvectorError) throw err;
+      // 42P01/42703/42501: the DSN cannot read the ACL tables (least-privilege
+      // role without the helper function) → ask the operator to install it.
+      if (err?.code === "42P01" || err?.code === "42703" || err?.code === "42501") {
+        throw new PgvectorError(
+          "pg-acl-unavailable",
+          `the DSN cannot resolve knowledge-base ACLs (${err.code}); install kb_visible_kbs(text) or grant read access`
+        );
+      }
+      throw new PgvectorError("pg-error", bounded(err?.message));
+    } finally {
+      try {
+        client.release?.();
+      } catch {
+        /* already returned */
+      }
+    }
+  }
+
   return {
     kind: "pgvector",
     /** Raw-row API (spec signature; unit tests target this). */
     search: (args) => search(args),
+    /** Personal-KB list for the supplied identity (ACL computed by the DB). */
+    listVisible,
     /**
      * kb-tool contract: canonical chunks `{text, source?, score?}` —
      * identical shape to the owui backend's retrieve (lib/kb-tool.js is
      * backend-agnostic).
      */
     async retrieve(kbId, query, k, opts) {
-      const rows = await search({ kbId, query, k, allowedIds, signal: opts?.signal });
+      const rows = await search({
+        kbId,
+        query,
+        k,
+        allowedIds: opts?.allowedIds ?? allowedIds,
+        email: opts?.email,
+        signal: opts?.signal,
+      });
       return shapePgvectorRows(rows, { kbName: kbNames.get(kbId) });
     },
     /**

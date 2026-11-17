@@ -32,10 +32,19 @@
         openwebuiUrl: ""
         apiKeyRef: OPENWEBUI_API_KEY
         pgUrlRef: OWUI_PG_READONLY_URL
+        # ⚠️ 仓库/发布包内保持空值：真实的 DSN 与网关 key 由公司 policy 按用户下发
+        # （见 dsh-kb-personal/03-policy-and-fallback-config.md），或由发布流水线在
+        # 打包时注入。切勿把 dbadmin 口令提交到本仓库（公开发布）。
+        # 本机临时取值放在 dsh-kb-personal/cordis.local.yml（不入库）。
+        pgUrl: ""
         pgTableName: document_chunk
-        embeddingUrl: ""
-        embeddingModel: ""
-        embeddingKeyRef: ""
+        embeddingUrl: "https://api-gateway.suezasia.com/v1"
+        embeddingModel: "bce-embedding-base_v1"
+        embeddingKeyRef: "KB_EMBED_API_KEY"
+        rerankApiKey: ""
+        personalKbEnabled: true
+        personalKbScope: accessible
+        identityEmail: ""
         embeddingDim: 0
         k: 8
         maxChunkChars: 1200

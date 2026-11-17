@@ -58,7 +58,8 @@ import { shapeResults } from "./lib/normalize.js";
 import { makeSessionKbState } from "./lib/state.js";
 import { makeKbSearchTool } from "./lib/kb-tool.js";
 import { createPgvectorBackend } from "./lib/pgvector.js";
-import { normalizeKbListOverride, makeKbListProvider } from "./lib/kb-list.js";
+import { normalizeKbListOverride, makeIdentityKbListProvider, makeKbListProvider } from "./lib/kb-list.js";
+import { IDENTITY_SOURCES, makeIdentityResolver } from "./lib/identity.js";
 import { RERANK_KEY_REF, RERANK_TIMEOUT_MS, rerankChunks, selectFinal } from "./lib/rerank.js";
 import { embedText } from "./lib/embed.js";
 import { applySettingsBody, validateSettingsBody } from "./lib/settings.js";
@@ -85,6 +86,12 @@ export const Config = z.object({
    * backend; resolved per pool build (never cached).
    */
   pgUrlRef: z.string().default("OWUI_PG_READONLY_URL"),
+  /**
+   * 直达 DSN：由公司 policy 下发（推荐"每用户 DSN"，身份内嵌在
+   * `options=-c kb.email=<本人邮箱>` 里）。非空时**优先于** pgUrlRef；
+   * "" = 回落到凭据引用（`$DSH_HOME/.credentials.yaml` 的 refs / .env）。
+   */
+  pgUrl: z.string().default(""),
   /** OWUI vector table name; legacy OWUI versions used `vector_search`. */
   pgTableName: z.string().default("document_chunk"),
   /**
@@ -153,6 +160,27 @@ export const Config = z.object({
    * `degraded: "rerank-unavailable"` + a short reason) — retrieval itself
    * never fails because of the reranker.
    */
+  /**
+   * 直达 rerank/嵌入网关 key：由公司 policy 下发，非空时优先于
+   * KB_EMBED_API_KEY 凭据引用。"" = 只用凭据引用。
+   */
+  rerankApiKey: z.string().default(""),
+  /**
+   * 个人知识库开关：true 时 KB 列表 = 当前身份在 PowerGPT 可访问的全部
+   * 知识库（DB 侧 `kb_visible_kbs(email)` 计算 ACL），失败自动回落
+   * `kbListOverride`。false = 只用静态白名单。
+   */
+  personalKbEnabled: z.boolean().default(true),
+  /**
+   * 个人知识库范围：`accessible` = 我能访问的全部（我创建的 + 公开 + 共享给我）；
+   * `owned` = 只要我创建的。默认 `accessible`。
+   */
+  personalKbScope: z.union([z.const("accessible"), z.const("owned")]).default("accessible"),
+  /**
+   * 身份兜底：仅在既没有 `SUEZ_USER_EMAIL`、也读不到 OneDrive/Office
+   * 注册表时使用（单机排障）。"" = 不覆盖。
+   */
+  identityEmail: z.string().default(""),
   rerankEnabled: z.boolean().default(true),
   /** Cross-encoder rerank endpoint (same gateway as the embeddings). */
   rerankUrl: z.string().default("https://api-gateway.suezasia.com/v1/rerank"),
@@ -230,10 +258,36 @@ export function apply(ctx, config) {
     ttlMs: KB_LIST_TTL_MS,
     log,
   });
+  // ── Identity (personal KBs) ─────────────────────────────────────────────
+  // Identity comes from the machine / SSO (never from a request body, never
+  // from a tool argument); the DATABASE turns it into "which knowledge bases
+  // may this person read", so the ACL is not re-implemented here. Any
+  // failure — identity unresolved, pgvector unconfigured, DBA function not
+  // installed — degrades to the static whitelist: the chip never goes dark
+  // and the two public KBs stay searchable.
+  const identity = makeIdentityResolver({ config, env: process.env, log });
+  const identityProvider =
+    config.personalKbEnabled === false
+      ? undefined
+      : makeIdentityKbListProvider({
+          fetchVisible: async () => {
+            const who = await identity.resolve();
+            if (who.email === undefined || who.email === "") {
+              throw Object.assign(new Error("identity-unresolved"), { code: "identity-unresolved" });
+            }
+            return getBackend("pgvector").listVisible(who.email, config.personalKbScope ?? "accessible");
+          },
+          // The static whitelist doubles as the always-visible fallback.
+          fallbackList: overrideList,
+          ttlMs: 60_000,
+          log,
+        });
   /**
    * @returns {Promise<Array<{id: string, name: string, description?: string}>>}
    */
-  const listKbs = () => kbProvider.list();
+  const listKbs = () => (identityProvider !== undefined ? identityProvider.list() : kbProvider.list());
+  /** Where the served list came from: identity | fallback | override | owui. */
+  const listSource = () => (identityProvider !== undefined ? identityProvider.currentSource() : kbProvider.source);
 
   // ── The backend both the routes and the tool retrieve through ────────────
   // Construction is fail-SOFT: a pgvector configuration problem (empty
@@ -345,12 +399,30 @@ export function apply(ctx, config) {
      */
     async retrieve(kbId, query, k, opts) {
       const e = eff();
-      const candidates = await getBackend(e.backend).retrieve(kbId, query, e.fetchK, opts);
+      // Personal-KB mode: hand the backend the CURRENT whitelist + identity so
+      // the RLS decision is bound to this one statement. A list/lookup failure
+      // must never break retrieval — the backend then keeps its
+      // construction-time whitelist (the static fallback).
+      let allowedIds;
+      let email;
+      if (identityProvider !== undefined) {
+        try {
+          const who = await identity.resolve();
+          email = who.email;
+          allowedIds = (await listKbs()).map((entry) => entry.id);
+        } catch {
+          allowedIds = undefined;
+          email = undefined;
+        }
+      }
+      const candidates = await getBackend(e.backend).retrieve(kbId, query, e.fetchK, { ...opts, allowedIds, email });
       const pool = Array.isArray(candidates) ? candidates : candidates?.results ?? [];
       let rerank;
       if (e.rerankEnabled && pool.length > 0) {
-        const keyHit = await resolveCredential(RERANK_KEY_REF);
-        const key = keyHit !== undefined ? keyHit.value : undefined;
+        // ① policy 直达值 → ② KB_EMBED_API_KEY 凭据引用 → ③ 跳过 rerank
+        const directKey = typeof e.rerankApiKey === "string" ? e.rerankApiKey.trim() : "";
+        const keyHit = directKey === "" ? await resolveCredential(RERANK_KEY_REF) : undefined;
+        const key = directKey !== "" ? directKey : keyHit !== undefined ? keyHit.value : undefined;
         if (typeof key === "string" && key !== "") {
           rerank = {
             url: e.rerankUrl,
@@ -610,14 +682,17 @@ export function apply(ctx, config) {
                 return hit !== undefined && typeof hit.value === "string" && hit.value !== "";
               };
               const [pgCred, embedCred] = await Promise.all([credPresent(e.pgUrlRef), credPresent(e.embeddingKeyRef)]);
+              const rerankCred = await credPresent(RERANK_KEY_REF);
+              // 直达值（policy 下发）优先；凭据引用是兜底。响应只给布尔/枚举，
+              // 永不出现 DSN 或 key 本身。
+              const pgDirect = typeof e.pgUrl === "string" && e.pgUrl.trim() !== "";
+              const rerankDirect = typeof e.rerankApiKey === "string" && e.rerankApiKey.trim() !== "";
+              const who = identityProvider !== undefined ? await identity.resolve() : { email: undefined, source: IDENTITY_SOURCES.UNRESOLVED };
               let kbList = [];
-              if (overrideList.length > 0) kbList = overrideList;
-              else {
-                try {
-                  kbList = await listKbs();
-                } catch {
-                  kbList = [];
-                }
+              try {
+                kbList = await listKbs();
+              } catch {
+                kbList = [];
               }
               log.info("kb: settings read");
               sendJson(res, 200, {
@@ -629,10 +704,20 @@ export function apply(ctx, config) {
                 rerankModel: e.rerankModel,
                 embeddingModel: e.embeddingModel,
                 embeddingUrl: e.embeddingUrl,
-                listSource: kbProvider.source,
+                listSource: listSource(),
                 overrides: { ...overrides },
                 kbList,
-                credentials: { pg: pgCred, embed: embedCred },
+                identity: {
+                  email: who.email ?? null,
+                  source: who.source,
+                  personalKbEnabled: identityProvider !== undefined,
+                  kbCount: kbList.length,
+                },
+                credentials: { pg: pgCred || pgDirect, embed: embedCred, rerank: rerankCred || rerankDirect },
+                sources: {
+                  pg: pgDirect ? "policy" : pgCred ? "credentials" : null,
+                  rerank: rerankDirect ? "policy" : rerankCred ? "credentials" : null,
+                },
               });
               return;
             }
@@ -718,8 +803,14 @@ export function apply(ctx, config) {
             const rerankLeg = async () => {
               const t0 = Date.now();
               try {
-                const keyHit = await resolveCredential(RERANK_KEY_REF);
-                const key = keyHit !== undefined && typeof keyHit.value === "string" ? keyHit.value : "";
+                const direct = typeof e.rerankApiKey === "string" ? e.rerankApiKey.trim() : "";
+                const keyHit = direct === "" ? await resolveCredential(RERANK_KEY_REF) : undefined;
+                const key =
+                  direct !== ""
+                    ? direct
+                    : keyHit !== undefined && typeof keyHit.value === "string"
+                      ? keyHit.value
+                      : "";
                 if (key === "") return { ok: false, error: "rerank-not-configured" };
                 const r = await rerankChunks({
                   url: e.rerankUrl,
