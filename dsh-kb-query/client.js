@@ -77,6 +77,7 @@ window.__ModuleLoader__.load({
       ".kbq-setInput{max-width:420px}" +
       ".kbq-setNum{max-width:80px}" +
       ".kbq-setCheck{display:inline-flex;align-items:center;gap:6px;cursor:pointer}" +
+  ".kbq-setRadios{display:inline-flex;align-items:center;gap:16px;flex-wrap:wrap}" +
       ".kbq-setOk{color:var(--dsw-alias-label-secondary)}" +
       ".kbq-setErr{color:var(--dsw-alias-label-tertiary)}" +
       ".kbq-setActions{display:flex;gap:8px;align-items:center;margin-top:2px}" +
@@ -745,14 +746,28 @@ window.__ModuleLoader__.load({
         ]),
         e("div", { className: "kbq-setRow", key: "sc" }, [
           e("span", { className: "kbq-setLabel" }, t("settings.scope")),
-          e("label", { className: "kbq-setCheck" }, [
-            e("input", {
-              type: "checkbox",
-              checked: draft.personalKbScope === "owned",
-              onChange: (ev) =>
-                setDraft({ ...draft, personalKbScope: ev.target.checked ? "owned" : "accessible" })
-            }),
-            ` ${draft.personalKbScope === "owned" ? t("settings.scope.owned") : t("settings.scope.accessible")}`
+          // Two radios (single choice) beat a lone checkbox: the checkbox said
+          // "只显示我创建的" with no visible alternative, which read as a filter
+          // rather than a mode.
+          e("span", { className: "kbq-setRadios" }, [
+            e("label", { className: "kbq-setCheck", key: "acc" }, [
+              e("input", {
+                type: "radio",
+                name: "kbq-scope",
+                checked: draft.personalKbScope !== "owned",
+                onChange: () => setDraft({ ...draft, personalKbScope: "accessible" })
+              }),
+              ` ${t("settings.scope.accessible")}`
+            ]),
+            e("label", { className: "kbq-setCheck", key: "own" }, [
+              e("input", {
+                type: "radio",
+                name: "kbq-scope",
+                checked: draft.personalKbScope === "owned",
+                onChange: () => setDraft({ ...draft, personalKbScope: "owned" })
+              }),
+              ` ${t("settings.scope.owned")}`
+            ])
           ])
         ]),
         e("div", { className: "kbq-setRow", key: "k" }, [

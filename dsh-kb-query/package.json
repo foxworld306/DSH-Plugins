@@ -1,7 +1,7 @@
 {
   "name": "dsh-kb-query",
-  "version": "0.2.1",
-  "description": "Company knowledge-base (RAG) access for dsh web agents 閳?a composer 閻儴鐦戞惔?chip (browser half) and the kb_search model tool (host half) over a static KB whitelist, with a pgvector direct backend (default) and the Open WebUI retrieval backend",
+  "version": "0.2.2",
+  "description": "Company knowledge-base (RAG) access for dsh web agents 闁?a composer 闁活厹鍎撮惁鎴炴償?chip (browser half) and the kb_search model tool (host half) over a static KB whitelist, with a pgvector direct backend (default) and the Open WebUI retrieval backend",
   "type": "module",
   "main": "index.js",
   "exports": {
