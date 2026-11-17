@@ -107,7 +107,7 @@ export function makeKbListProvider({ overrideList, fetchList, ttlMs = 30000, log
  * @param {Array<{id: string, name: string, description?: string}>} [options.fallbackList]
  * @param {number} [options.ttlMs=60000]
  * @param {{warn?: Function}} [options.log]
- * @returns {{source: "identity", list: () => Promise<Array<object>>, currentSource: () => "identity"|"fallback"}}
+ * @returns {{source: "identity", list: () => Promise<Array<object>>, currentSource: () => "identity"|"fallback", clear: () => void}}
  */
 export function makeIdentityKbListProvider({ fetchVisible, fallbackList = [], ttlMs = 60000, log }) {
   const fallback = Array.isArray(fallbackList) ? fallbackList : [];
@@ -136,5 +136,15 @@ export function makeIdentityKbListProvider({ fetchVisible, fallbackList = [], tt
       return fallback;
     }
   };
-  return { source: "identity", list, currentSource: () => cache.source };
+  return {
+    source: "identity",
+    list,
+    currentSource: () => cache.source,
+    /** 丢弃缓存（范围切换 / 身份变化后由调用方触发）。 */
+    clear: () => {
+      cache.at = 0;
+      cache.data = null;
+      cache.source = "fallback";
+    },
+  };
 }

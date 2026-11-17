@@ -275,7 +275,7 @@ export function apply(ctx, config) {
             if (who.email === undefined || who.email === "") {
               throw Object.assign(new Error("identity-unresolved"), { code: "identity-unresolved" });
             }
-            return getBackend("pgvector").listVisible(who.email, config.personalKbScope ?? "accessible");
+            return getBackend("pgvector").listVisible(who.email, eff().personalKbScope ?? "accessible");
           },
           // The static whitelist doubles as the always-visible fallback.
           fallbackList: overrideList,
@@ -699,6 +699,7 @@ export function apply(ctx, config) {
                 backend: e.backend,
                 rerankEnabled: e.rerankEnabled,
                 k: e.k,
+                personalKbScope: e.personalKbScope ?? "accessible",
                 fetchK: e.fetchK,
                 topKReranker: e.topKReranker,
                 rerankModel: e.rerankModel,
@@ -728,7 +729,16 @@ export function apply(ctx, config) {
             const body = await readJsonBody(req);
             if (body === null) return badRequest(res);
             if (!validateSettingsBody(body).ok) return badRequest(res);
+            // A scope switch changes WHICH KBs exist for this identity: drop the
+            // list cache and every session selection that may now be out of
+            // scope (a stale session whitelist would otherwise survive).
+            const scopeChanged =
+              body.personalKbScope !== undefined && body.personalKbScope !== eff().personalKbScope;
             applySettingsBody(overrides, body);
+            if (scopeChanged) {
+              identityProvider?.clear?.();
+              state.clearAll();
+            }
             const e = eff();
             log.info(
               `kb: settings override${body.reset === true ? " (reset)" : ""} backend=${e.backend} rerank=${e.rerankEnabled ? "on" : "off"} k=${e.k}`

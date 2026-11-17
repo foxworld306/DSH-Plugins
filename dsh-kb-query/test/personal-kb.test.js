@@ -288,4 +288,14 @@ await t("pgvector: policy rerankApiKey also authenticates the embedding leg", as
   assert.equal(embedCall.auth, "Bearer sk-gateway-key", "embedding must carry the policy key");
 });
 
+await t("settings: personalKbScope is runtime-overridable and validated", async () => {
+  const { validateSettingsBody, applySettingsBody } = await import("../lib/settings.js");
+  assert.equal(validateSettingsBody({ personalKbScope: "owned" }).ok, true);
+  assert.equal(validateSettingsBody({ personalKbScope: "accessible" }).ok, true);
+  assert.equal(validateSettingsBody({ personalKbScope: "everything" }).ok, false);
+  const overrides = {};
+  applySettingsBody(overrides, { personalKbScope: "owned" });
+  assert.equal(overrides.personalKbScope, "owned");
+});
+
 console.log(`\n${pass} passed${process.exitCode ? " (with failures)" : ""}`);

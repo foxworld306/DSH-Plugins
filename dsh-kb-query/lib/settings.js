@@ -4,10 +4,9 @@
  *
  * Runtime overrides (changed from the settings page) are IN-MEMORY only:
  * a DSH restart clears them and the profile config is the baseline again.
- * Only three keys are overridable — the KB whitelist is deliberately NOT
- * one of them (it is the security boundary: config `kbListOverride` stays
- * the single source of truth for /kb, /kb/select, /kb/query, and the
- * pgvector SQL guard).
+ * Only four keys are overridable — backend, rerankEnabled, k and
+ * personalKbScope — the KB whitelist is deliberately NOT one of them (it is
+ * the security boundary: the ACL always comes from the database).
  *
  * Secrets never flow through this module: a settings body carries at most
  * {backend, rerankEnabled, k, reset} — no URLs, no keys, no DSN.
@@ -16,8 +15,11 @@
 /** Backends the settings page may switch between. */
 export const SETTINGS_BACKENDS = Object.freeze(["pgvector", "owui"]);
 
+/** 个人知识库范围：accessible = 我能访问的全部；owned = 只显示我创建的。 */
+export const SETTINGS_SCOPES = Object.freeze(["accessible", "owned"]);
+
 /** Keys a settings body may set (plus the `reset` verb). */
-export const SETTINGS_MUTABLE_KEYS = Object.freeze(["backend", "rerankEnabled", "k"]);
+export const SETTINGS_MUTABLE_KEYS = Object.freeze(["backend", "rerankEnabled", "k", "personalKbScope"]);
 
 /** Upper bound for a runtime k (topKReranker is clamped 1..20 anyway). */
 export const SETTINGS_K_MAX = 20;
@@ -32,8 +34,9 @@ export function validateSettingsBody(body) {
   for (const key of Object.keys(body)) {
     if (key !== "reset" && !SETTINGS_MUTABLE_KEYS.includes(key)) return { ok: false, error: "bad-request" };
   }
-  const { backend, rerankEnabled, k, reset } = body;
+  const { backend, rerankEnabled, k, personalKbScope, reset } = body;
   if (backend !== undefined && !SETTINGS_BACKENDS.includes(backend)) return { ok: false, error: "bad-request" };
+  if (personalKbScope !== undefined && !SETTINGS_SCOPES.includes(personalKbScope)) return { ok: false, error: "bad-request" };
   if (rerankEnabled !== undefined && typeof rerankEnabled !== "boolean") return { ok: false, error: "bad-request" };
   if (k !== undefined && (!Number.isInteger(k) || k < 1 || k > SETTINGS_K_MAX)) return { ok: false, error: "bad-request" };
   if (reset !== undefined && typeof reset !== "boolean") return { ok: false, error: "bad-request" };
@@ -52,6 +55,7 @@ export function applySettingsBody(overrides, body) {
     return overrides;
   }
   if (body.backend !== undefined) overrides.backend = body.backend;
+  if (body.personalKbScope !== undefined) overrides.personalKbScope = body.personalKbScope;
   if (body.rerankEnabled !== undefined) overrides.rerankEnabled = body.rerankEnabled;
   if (body.k !== undefined) overrides.k = body.k;
   return overrides;

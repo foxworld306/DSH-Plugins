@@ -134,6 +134,9 @@ window.__ModuleLoader__.load({
       "settings.on": "开",
       "settings.off": "关",
       "settings.k": "返回条数 k",
+  "settings.scope": "知识库范围",
+  "settings.scope.accessible": "我能访问的全部",
+  "settings.scope.owned": "只显示我创建的",
       "settings.fetchK": "候选池 fetchK",
       "settings.topK": "重排上限 topK",
       "settings.embeddingModel": "嵌入模型",
@@ -190,6 +193,9 @@ window.__ModuleLoader__.load({
       "settings.on": "on",
       "settings.off": "off",
       "settings.k": "Chunk cap k",
+  "settings.scope": "Knowledge-base scope",
+  "settings.scope.accessible": "Everything I can access",
+  "settings.scope.owned": "Only what I created",
       "settings.fetchK": "Candidate pool fetchK",
       "settings.topK": "Rerank cap topK",
       "settings.embeddingModel": "Embedding model",
@@ -599,7 +605,12 @@ window.__ModuleLoader__.load({
         getJson(ROUTE_SETTINGS)
           .then((d) => {
             setData(d);
-            setDraft({ backend: d.backend, rerankEnabled: d.rerankEnabled, k: d.k });
+            setDraft({
+              backend: d.backend,
+              rerankEnabled: d.rerankEnabled,
+              k: d.k,
+              personalKbScope: d.personalKbScope ?? "accessible"
+            });
           })
           .catch((err) => setLoadError(errCode(err)));
       };
@@ -623,7 +634,8 @@ window.__ModuleLoader__.load({
         draft !== null &&
         (draft.backend !== data.backend ||
           draft.rerankEnabled !== data.rerankEnabled ||
-          draft.k !== data.k);
+          draft.k !== data.k ||
+          draft.personalKbScope !== (data.personalKbScope ?? "accessible"));
 
       const save = () => {
         if (data === null || draft === null || saving) return;
@@ -729,6 +741,18 @@ window.__ModuleLoader__.load({
               onChange: (ev) => setDraft({ ...draft, rerankEnabled: ev.target.checked })
             }),
             ` ${draft.rerankEnabled ? t("settings.on") : t("settings.off")}${typeof data.rerankModel === "string" && data.rerankModel !== "" ? " · " + data.rerankModel : ""}`
+          ])
+        ]),
+        e("div", { className: "kbq-setRow", key: "sc" }, [
+          e("span", { className: "kbq-setLabel" }, t("settings.scope")),
+          e("label", { className: "kbq-setCheck" }, [
+            e("input", {
+              type: "checkbox",
+              checked: draft.personalKbScope === "owned",
+              onChange: (ev) =>
+                setDraft({ ...draft, personalKbScope: ev.target.checked ? "owned" : "accessible" })
+            }),
+            ` ${draft.personalKbScope === "owned" ? t("settings.scope.owned") : t("settings.scope.accessible")}`
           ])
         ]),
         e("div", { className: "kbq-setRow", key: "k" }, [
